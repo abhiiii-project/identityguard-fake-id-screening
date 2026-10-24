@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IdentityGuard · Fake ID & Document Screening</title>
+<style>
+  :root{--bg:#0f1420;--panel:#171e2e;--panel2:#1e2740;--line:#2a3550;--tx:#e8ecf5;--mut:#8b97b3;
+        --ok:#2fbf71;--warn:#f0b429;--bad:#ef4d5a;--acc:#5b8cff;--crit:#c0182b}
+  *{box-sizing:border-box}
+  body{margin:0;font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--tx)}
+  header{padding:18px 28px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px}
+  header h1{font-size:18px;margin:0;letter-spacing:.2px}
+  header span{color:var(--mut);font-size:13px}
+  .badge{margin-left:auto;font-size:12px;padding:3px 10px;border-radius:99px;border:1px solid var(--line);color:var(--mut)}
+  main{display:grid;grid-template-columns:minmax(320px,430px) 1fr;gap:22px;padding:22px 28px;max-width:1280px;margin:auto}
+  @media(max-width:900px){main{grid-template-columns:1fr;padding:16px}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+  h2{font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);margin:0 0 12px}
+  label{display:block;font-size:12.5px;color:var(--mut);margin:10px 0 4px}
+  input[type=text],input[type=date]{width:100%;padding:9px 11px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--tx);font-size:14px}
+  input:focus{outline:2px solid var(--acc);border-color:transparent}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .drop{margin-top:12px;border:1.5px dashed var(--line);border-radius:10px;padding:18px;text-align:center;color:var(--mut);cursor:pointer;background:var(--panel2)}
+  .drop.on{border-color:var(--acc);color:var(--tx)}
+  .drop img{max-width:100%;max-height:160px;border-radius:6px;margin-top:8px}
+  button{width:100%;margin-top:16px;padding:12px;border:0;border-radius:10px;background:var(--acc);color:#fff;font-weight:600;font-size:15px;cursor:pointer}
+  button:disabled{opacity:.6;cursor:wait}
+  button.ghost{background:transparent;border:1px solid var(--line);color:var(--mut);margin-top:8px;font-weight:500}
+  details{margin-top:10px;color:var(--mut);font-size:13px} summary{cursor:pointer}
+  .verdict{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+  .gauge{--p:0;--c:var(--ok);width:116px;height:116px;border-radius:50%;display:grid;place-items:center;
+         background:conic-gradient(var(--c) calc(var(--p)*1%),var(--panel2) 0)}
+  .gauge div{width:92px;height:92px;border-radius:50%;background:var(--panel);display:grid;place-items:center;text-align:center}
+  .gauge b{font-size:26px;line-height:1} .gauge small{display:block;color:var(--mut);font-size:10.5px;margin-top:2px}
+  .decision{font-size:24px;font-weight:700}
+  .pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+  .critical{background:var(--crit);color:#fff}.high{background:#4b1d22;color:#ff8d96}.medium{background:#4a3a12;color:#ffd266}
+  .low{background:#1f3350;color:#8fb6ff}.info{background:#252d40;color:var(--mut)}
+  .finding{padding:12px 0;border-top:1px solid var(--line)} .finding:first-child{border-top:0}
+  .finding .t{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .finding code{color:var(--mut);font-size:12px}
+  .finding p{margin:6px 0 0}
+  .ev{color:var(--mut);font-size:12.5px;margin-top:4px;word-break:break-word}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+  .chip{font-size:11.5px;padding:2px 9px;border-radius:6px;background:var(--panel2);color:var(--mut)}
+  .empty{color:var(--mut);padding:50px 10px;text-align:center}
+  .presets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+  .presets button{width:auto;margin:0;padding:6px 11px;font-size:12.5px;background:var(--panel2);border:1px solid var(--line);font-weight:500}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px} td,th{padding:5px 4px;text-align:left;border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+<header>
+  <h1>🛡️ IdentityGuard</h1><span>AI-Based Fake Identity &amp; Document Screening</span>
+  <div class="badge">ML tamper model: {{ 'loaded' if ml else 'not trained' }}</div>
+</header>
+<main>
+  <section class="card">
+    <h2>Applicant submission</h2>
+    <div class="presets">
+      <button type="button" data-p="good">Genuine example</button>
+      <button type="button" data-p="fake">Fake example</button>
+    </div>
+    <form id="f">
+      <label>Full name</label><input type="text" name="name" placeholder="Priya Sharma">
+      <div class="row">
+        <div><label>Date of birth</label><input type="text" name="dob" placeholder="DD/MM/YYYY"></div>
+        <div><label>PIN code</label><input type="text" name="pincode" placeholder="431605"></div>
+      </div>
+      <label>Aadhaar number</label><input type="text" name="aadhaar" placeholder="XXXX XXXX XXXX">
+      <label>PAN</label><input type="text" name="pan" placeholder="ABCPS1234D">
+      <div class="row">
+        <div><label>Mobile</label><input type="text" name="phone" placeholder="98XXXXXXXX"></div>
+        <div><label>Email</label><input type="text" name="email" placeholder="name@example.com"></div>
+      </div>
+      <details><summary>Passport MRZ (optional)</summary>
+        <label>Line 1 (44 chars)</label><input type="text" name="mrz1">
+        <label>Line 2 (44 chars)</label><input type="text" name="mrz2">
+      </details>
+      <div class="drop" id="drop">Click or drop an ID image here (JPG / PNG)<div id="pv"></div></div>
+      <input type="file" id="file" name="document" accept="image/*" hidden>
+      <button id="go" type="submit">Screen submission</button>
+    </form>
+  </section>
+
+  <section class="card" id="out">
+    <div class="empty">Submit an application to see the risk assessment.<br>Every score is explained by the findings listed here.</div>
+  </section>
+</main>
+
+<script>
+const $=s=>document.querySelector(s), f=$('#f'), file=$('#file'), drop=$('#drop');
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+drop.onclick=()=>file.click();
+['dragover','dragenter'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.add('on')}));
+['dragleave','drop'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.remove('on')}));
+drop.addEventListener('drop',ev=>{if(ev.dataTransfer.files[0]){file.files=ev.dataTransfer.files;preview()}});
+file.onchange=preview;
+function preview(){const x=file.files[0];if(!x)return;$('#pv').innerHTML='<img src="'+URL.createObjectURL(x)+'"><div>'+esc(x.name)+'</div>'}
+
+const PRESETS={
+ good:{name:'Priya Sharma',dob:'14/03/1994',aadhaar:'',pan:'',phone:'9822012345',email:'priya.sharma@example.com',pincode:'431605'},
+ fake:{name:'test user 99',dob:'01/01/2015',aadhaar:'123456789012',pan:'ABCDE0000F',phone:'9999999999',email:'x8k2q9z7w1@mailinator.com',pincode:'012345'}
+};
+document.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{
+  const p=PRESETS[b.dataset.p]; for(const k in p) f.elements[k].value=p[k];
+  if(b.dataset.p==='good') f.elements.aadhaar.placeholder='Enter a valid Aadhaar to test';
+});
+
+f.onsubmit=async e=>{
+  e.preventDefault(); const btn=$('#go'); btn.disabled=true; btn.textContent='Analysing…';
+  try{
+    const r=await fetch('/api/screen',{method:'POST',body:new FormData(f)});
+    render(await r.json());
+  }catch(err){$('#out').innerHTML='<div class="empty">Request failed: '+esc(err)+'</div>'}
+  btn.disabled=false; btn.textContent='Screen submission';
+};
+
+function render(r){
+  if(r.error){$('#out').innerHTML='<div class="empty">'+esc(r.error)+'</div>';return}
+  const col=r.decision==='APPROVE'?'var(--ok)':r.decision==='REJECT'?'var(--bad)':'var(--warn)';
+  const label={APPROVE:'Approve',MANUAL_REVIEW:'Manual review',REJECT:'Reject'}[r.decision];
+  const sev=Object.entries(r.summary).map(([k,v])=>`<span class="pill ${k}">${v} ${k}</span>`).join(' ');
+  const fs=r.findings.filter(x=>x.severity!=='info');
+  const info=r.findings.filter(x=>x.severity==='info');
+  const ev=o=>Object.keys(o).length?'<div class="ev">'+Object.entries(o).map(([k,v])=>esc(k)+': '+esc(JSON.stringify(v))).join(' · ')+'</div>':'';
+  const row=x=>`<div class="finding"><div class="t"><span class="pill ${x.severity}">${x.severity}</span><b>${esc(x.code)}</b><code>${esc(x.category)}</code></div><p>${esc(x.message)}</p>${ev(x.evidence)}</div>`;
+  const ex=Object.entries(r.extracted_fields||{}).filter(([k,v])=>v);
+  $('#out').innerHTML=`
+   <h2>Risk assessment</h2>
+   <div class="verdict">
+     <div class="gauge" style="--p:${r.risk_score};--c:${col}"><div><span><b>${Math.round(r.risk_score)}</b><small>RISK / 100</small></span></div></div>
+     <div><div class="decision" style="color:${col}">${label}</div><div style="margin-top:6px">${sev||'<span class="pill info">no findings</span>'}</div>
+     ${r.ml_tamper_probability!=null?`<div class="ev">ML tamper probability: ${(r.ml_tamper_probability*100).toFixed(0)}%</div>`:''}
+     <div class="ev">Completed in ${r.elapsed_ms} ms</div></div>
+   </div>
+   <div class="chips">${r.checks_run.map(c=>`<span class="chip">✓ ${esc(c.replace(/_/g,' '))}</span>`).join('')}</div>
+   <h2 style="margin-top:20px">Findings (${fs.length})</h2>
+   ${fs.length?fs.map(row).join(''):'<div class="empty" style="padding:20px">No risk signals detected.</div>'}
+   ${ex.length?`<h2 style="margin-top:20px">Extracted from document (OCR)</h2><table>${ex.map(([k,v])=>`<tr><th>${esc(k)}</th><td>${esc(v)}</td></tr>`).join('')}</table>`:''}
+   ${info.length?`<h2 style="margin-top:20px">Notes</h2>${info.map(row).join('')}`:''}`;
+}
+</script>
+</body>
+</html>
